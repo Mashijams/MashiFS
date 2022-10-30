@@ -3,7 +3,6 @@
 #include "disk.h"
 
 #include <fcntl.h>
-#include <string.h>
 
 Disk::Disk()
 	:
