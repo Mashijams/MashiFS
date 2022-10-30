@@ -1,0 +1,64 @@
+// Interface between disk and file system
+
+#include "disk.h"
+
+#include <fcntl.h>
+#include <string.h>
+
+Disk::Disk()
+	:
+	FileDescriptor(0)
+{
+}
+
+
+Disk::~Disk()
+{
+	if (FileDescriptor > 0) {
+		close(FileDescriptor);
+		FileDescriptor = 0;
+	}
+}
+
+
+status_t
+Disk::Create(char *DiskName, int TotalBlocks)
+{
+	// create and mount disk image
+	// set persmisions of image to the owner
+	FileDescriptor = ::open(DiskName, O_RDWR|O_CREAT, 0600);
+
+	// if disk isn't created
+	if (FileDescriptor < 0) {
+		fprintf(stderr, "Unable to create disk image %s\n\n", DiskName);
+		return F_FAIL;
+    }
+
+	// Make disk for desired blocks size
+	if (ftruncate(FileDescriptor, TotalBlocks*BLOCK_SIZE) < 0) {
+		fprintf(stderr, "Unable to set size of disk image %s\n\n", DiskName);
+		return F_FAIL;
+	}
+
+	// Disk created successfully
+	return F_SUCCESS;
+}
+
+
+status_t
+Disk::Mount(char *DiskName)
+{
+	// mount disk image
+	// set persmisions of image to the owner
+	FileDescriptor = ::open(DiskName, O_RDWR, 0600);
+
+	// if disk doesn't exist
+	if (FileDescriptor < 0) {
+		fprintf(stderr, "Unable to open disk image %s\n\n", DiskName);
+		fprintf(stderr, "%s image doesn't exist\n\n", DiskName);
+		return F_FAIL;
+    }
+
+	// Disk mounted successfully
+	return F_SUCCESS;
+}
