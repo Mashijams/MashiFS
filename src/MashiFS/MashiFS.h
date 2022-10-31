@@ -12,7 +12,7 @@
 #define	DIR_MAGIC 0xCEE
 #define POINTERS_PER_INODE 5
 #define POINTERS_PER_BLOCK 1024
-#define TOTAL_INODE 132
+#define TOTAL_INODE 124
 
 
 // This superblock is at first disk block
@@ -29,6 +29,7 @@ struct Inode {
 		uint16_t		Magic;						// Magic number of Inode
 		uint32_t		Size;						// size of file
 		uint8_t			Type;						// Is it file or directory
+		uint16_t		TotalDataBlocks				// total data blocks associated with this inode
 		uint32_t		Direct[POINTERS_PER_INODE];	// Direct pointers for data
 		uint32_t		Indirect;					// Indirect pointers for data
 };
@@ -37,6 +38,7 @@ struct Inode {
 // Data Header for Directory block
 struct DirectoryHeader {
 		uint16_t		Magic;			// Magic number for header
+		uint16_t		FreeSpace;		// Total Freespace in this directory block
 		uint16_t		TotalEntries;	// Total number of entries in this directory
 };
 
