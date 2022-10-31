@@ -3,7 +3,6 @@
 
 
 #include <stdlib.h>
-#include "MashiFS/MashiFS.h"
 #include "MashiFS/types.h"
 
 #define BLOCK_SIZE 4096
@@ -17,6 +16,6 @@ public:
             status_t	Mount(char *DiskName);
 private:
 			int			FileDescriptor; // File descriptor of disk image
-}
+};
 
 #endif
