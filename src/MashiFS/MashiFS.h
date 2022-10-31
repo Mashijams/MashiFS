@@ -47,8 +47,10 @@ struct IndirectBlock {
 };
 
 
+// Entries format in directory block
 struct DirectoryEntry {
 		uint16_t		Inumber;
+		uint8_t			namelen;
 		char			name[];
 };
 
