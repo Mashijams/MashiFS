@@ -9,6 +9,7 @@
 
 #define SB_MAGIC 0x4C5
 #define IN_MAGIC 0xCEF
+#define	DIR_MAGIC 0xCEE
 #define POINTERS_PER_INODE 5
 #define POINTERS_PER_BLOCK 1024
 #define TOTAL_INODE 132
@@ -30,6 +31,25 @@ struct Inode {
 		uint8_t			Type;						// Is it file or directory
 		uint32_t		Direct[POINTERS_PER_INODE];	// Direct pointers for data
 		uint32_t		Indirect;					// Indirect pointers for data
+};
+
+
+// Data Header for Directory block
+struct DirectoryHeader {
+		uint16_t		Magic;			// Magic number for header
+		uint16_t		TotalEntries;	// Total number of entries in this directory
+};
+
+
+// Indirect ptr block for direct pointers
+struct IndirectBlock {
+		uint32_t		Direct[POINTERS_PER_BLOCK];
+};
+
+
+struct DirectoryEntry {
+		uint16_t		Inumber;
+		char			name[];
 };
 
 
