@@ -61,3 +61,41 @@ Disk::Mount(char *DiskName)
 	// Disk mounted successfully
 	return F_SUCCESS;
 }
+
+
+status_t
+Disk::Read(char* data, uint32_t blocknum)
+{
+	// set offset of file descriptor pointer to required blocknum
+	if (lseek(FileDescriptor, blocknum*BLOCK_SIZE, SEEK_SET) < 0) {
+    	fprintf(stderr, "Unable to set offset pointer in disk image %s\n\n", DiskName);
+    	return F_FAIL;
+    }
+
+	// Read data from disk in data buffer
+    if (::read(FileDescriptor, data, BLOCK_SIZE) != BLOCK_SIZE) {
+    	fprintf(stderr, "Unable to set read data from disk image %s\n\n", DiskName);
+    	return F_FAIL;
+    }
+
+	return F_SUCCESS;
+}
+
+
+status_t
+Disk::Write(char* data, uint32_t blocknum)
+{
+	// set offset of file descriptor pointer to required blocknum
+	if (lseek(FileDescriptor, blocknum*BLOCK_SIZE, SEEK_SET) < 0) {
+    	fprintf(stderr, "Unable to set offset pointer in disk image %s\n\n", DiskName);
+    	return F_FAIL;
+    }
+
+	// Read data from disk in data buffer
+    if (::write(FileDescriptor, data, BLOCK_SIZE) != BLOCK_SIZE) {
+    	fprintf(stderr, "Unable to set write data from disk image %s\n\n", DiskName);
+    	return F_FAIL;
+    }
+
+	return F_SUCCESS;
+}
