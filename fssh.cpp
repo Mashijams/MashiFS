@@ -7,9 +7,9 @@
 
 
 // file system headers
-#include "disk/disk.h"
-#include "MashiFS/MashiFS.h"
-#include "MashiFS/types.h"
+#include "disk.h"
+#include "MashiFS.h"
+#include "types.h"
 
 
 // Macros

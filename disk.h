@@ -3,7 +3,7 @@
 
 
 #include <stdlib.h>
-#include "MashiFS/types.h"
+#include "types.h"
 
 #define BLOCK_SIZE 4096
 

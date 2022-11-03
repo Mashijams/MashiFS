@@ -2,8 +2,8 @@
 #define MASHI_FS_H
 
 
-#include "disk/disk.h"
-#include "MashiFS/types.h"
+#include "disk.h"
+#include "types.h"
 #include <stdint.h>
 
 
