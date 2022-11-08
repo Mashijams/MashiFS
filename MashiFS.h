@@ -57,6 +57,20 @@ struct DirectoryEntry {
 };
 
 
+// Bitmpas to track free Inode and free FS Blocks
+// This structure is after superblock in first FS Block
+struct InodeMap {
+		uint8_t			Map[124];
+}
+
+
+// It starts from Third block of FS and will continue...
+struct BitMapHeader {
+		uint16_t		Magic;			// Magic number for this header
+		uint16_t		TotalBlocks;	// Total Blocks asscoiated for Blocks bitmap
+}
+
+
 class FileSystem {
 public:
 			status_t		Init(Disk& disk, size_t TotalBlocks);
