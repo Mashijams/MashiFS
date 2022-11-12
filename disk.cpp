@@ -79,7 +79,7 @@ Disk::Read(char* data, uint32_t blocknum)
 
 	// Read data from disk in data buffer
     if (::read(FileDescriptor, data, BLOCK_SIZE) != BLOCK_SIZE) {
-    	fprintf(stderr, "Unable to set read data from disk image\n\n");
+    	fprintf(stderr, "Unable to read data from disk image\n\n");
     	return F_FAIL;
     }
 
@@ -98,7 +98,7 @@ Disk::Write(char* data, uint32_t blocknum)
 
 	// Read data from disk in data buffer
     if (::write(FileDescriptor, data, BLOCK_SIZE) != BLOCK_SIZE) {
-    	fprintf(stderr, "Unable to set write data from disk image\n\n");
+    	fprintf(stderr, "Unable to write data from disk image\n\n");
     	return F_FAIL;
     }
 
