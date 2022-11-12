@@ -47,7 +47,7 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 	// Create BitMapHeader
 	BitMapHeader header;
 	header.Magic = BITMAP_MAGIC;
-	header.TotalBlocks = ceil((double)TotalBlocks / 1024);
+	header.TotalBlocks = ceil((double)TotalBlocks / 4096);
 
 	// write first block structures to disk now
 	size_t offset = 0;
@@ -83,8 +83,8 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 		Its header is in zeroth block
 	*/
 	for (int i = 2; i < 2 + header.TotalBlocks; i++) {
-		uint8_t	direct[POINTERS_PER_BLOCK];
-		for (int j  = 0; j < POINTERS_PER_BLOCK; j++) {
+		uint8_t	direct[BITMAPS_PER_BLOCK];
+		for (int j  = 0; j < BITMAPS_PER_BLOCK; j++) {
 			direct[j] = 0;
 		}
 		ptr = (char*)direct;

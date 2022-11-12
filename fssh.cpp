@@ -27,15 +27,15 @@ int main (int argc, char* argv[]) {
 	Disk	disk;
 	FileSystem	fs;
 
-	if (argc != 2 && argc != 3) {
-		fprintf(stderr, "Usage:  <MashiFS> <Mount> <DiskName>\n\n");
-		fprintf(stderr, "Usage:  <MashiFS> <Create> <DiskName> <TotalBlocks>\n\n");
+	if (argc != 4 && argc != 3) {
+		fprintf(stderr, "Usage:  <Mount> <DiskName>\n\n");
+		fprintf(stderr, "Usage:  <Create> <DiskName> <TotalBlocks>\n\n");
     	return EXIT_FAILURE;
 	}
 
 	// If we are creating a new disk with MashiFS
-	if (StringEquals(argv[0], "Create")) {
-		status_t status = Create(disk, fs, argv[1], atoi(argv[2]));
+	if (StringEquals(argv[1], "Create")) {
+		status_t status = Create(disk, fs, argv[2], atoi(argv[3]));
 		if (status == F_SUCCESS) {
 			// if creation and mount is successful run our shell
 			Shell(fs);
@@ -47,8 +47,8 @@ int main (int argc, char* argv[]) {
 	}
 
 	// If we are mounting existing disk
-	if (StringEquals(argv[0], "Mount")) {
-		status_t status = Mount(disk, fs, argv[1]);
+	if (StringEquals(argv[1], "Mount")) {
+		status_t status = Mount(disk, fs, argv[2]);
 		if (status == F_SUCCESS) {
 			// if mount is successful run our shell
 			Shell(fs);
@@ -68,7 +68,7 @@ Create(Disk &disk, FileSystem &fs, char *DiskName, size_t TotalBlocks)
 	status_t status = disk.Create(DiskName, TotalBlocks);
 
 	if (status == F_SUCCESS) {
-		printf("Disk %s created successfully and mounted with MashiFS\n\n", DiskName);
+		printf("Disk %s created successfully\n\n", DiskName);
 	}
 
 	if (status == F_FAIL) {
