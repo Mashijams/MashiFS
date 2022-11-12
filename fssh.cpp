@@ -8,7 +8,7 @@
 
 // file system headers
 #include "disk.h"
-#include "MashiFS.h"
+#include "FS.h"
 #include "types.h"
 
 
@@ -18,14 +18,14 @@
 
 // Command Shell functions
 status_t	Mount(Disk &disk, FileSystem &fs, char *DiskName);
-status_t	Create(Disk &disk, FileSystem &fs, char *DiskName, int TotalBlocks);
+status_t	Create(Disk &disk, FileSystem &fs, char *DiskName, size_t TotalBlocks);
 void		Shell(FileSystem &fs);
 
 
 // Main execution
 int main (int argc, char* argv[]) {
 	Disk	disk;
-	MashiFS	fs;
+	FileSystem	fs;
 
 	if (argc != 2 && argc != 3) {
 		fprintf(stderr, "Usage:  <MashiFS> <Mount> <DiskName>\n\n");
@@ -35,7 +35,7 @@ int main (int argc, char* argv[]) {
 
 	// If we are creating a new disk with MashiFS
 	if (StringEquals(argv[0], "Create")) {
-		status_t status = Create(disk, fs, argv[1], stoi(argv[2]));
+		status_t status = Create(disk, fs, argv[1], atoi(argv[2]));
 		if (status == F_SUCCESS) {
 			// if creation and mount is successful run our shell
 			Shell(fs);
@@ -65,7 +65,7 @@ int main (int argc, char* argv[]) {
 status_t
 Create(Disk &disk, FileSystem &fs, char *DiskName, size_t TotalBlocks)
 {
-	status_t status = disk.Create(fs, DiskName, TotalBlocks);
+	status_t status = disk.Create(DiskName, TotalBlocks);
 
 	if (status == F_SUCCESS) {
 		printf("Disk %s created successfully and mounted with MashiFS\n\n", DiskName);
@@ -85,7 +85,7 @@ Create(Disk &disk, FileSystem &fs, char *DiskName, size_t TotalBlocks)
 status_t
 Mount(Disk &disk, FileSystem &fs, char *DiskName)
 {
-	status_t status = disk.Mount(fs, DiskName);
+	status_t status = disk.Mount(DiskName);
 
 	if (status == F_SUCCESS) {
 		printf("Disk %s mounted successfully\n\n", DiskName);

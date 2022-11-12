@@ -4,10 +4,10 @@
 
 
 // This enum will determine what is status of process
-enum Status {
+enum status_t {
 	F_SUCCESS,
 	F_FAIL,
-} status_t;
+};
 
 
 // This enum will determine whether given Inode is for directory or file

@@ -1,6 +1,11 @@
 // Main FS Implementation
 
-#include "MashiFS.h"
+#include "FS.h"
+
+
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
 
 
 FileSystem::FileSystem()
@@ -11,7 +16,7 @@ FileSystem::FileSystem()
 
 FileSystem::~FileSystem()
 {
-	delete buffer;
+	delete[] buffer;
 }
 
 
@@ -45,24 +50,23 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 	header.TotalBlocks = ceil((double)TotalBlocks / 1024);
 
 	// write first block structures to disk now
-	char* data = new char[BLOCK_SIZE];
 	size_t offset = 0;
 
 	char* ptr;
 	ptr = (char*)&sb;
-	memcpy(data + offset, ptr, sizeof(SuperBlock));
+	memcpy(buffer + offset, ptr, sizeof(SuperBlock));
 	offset += sizeof(SuperBlock);
 
 	ptr = (char*)&map;
-	memcpy(data + offset, ptr, sizeof(InodeMap));
+	memcpy(buffer + offset, ptr, sizeof(InodeMap));
 	offset += sizeof(InodeMap);
 
 	ptr = (char*)&header;
-	memcpy(data + offset, ptr, sizeof(BitMapHeader));
+	memcpy(buffer + offset, ptr, sizeof(BitMapHeader));
 	offset += sizeof(BitMapHeader);
 
 	// Write to disk at block no zero
-	status = disk.Write(data, 0);
+	status = disk.Write(buffer, 0);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -84,16 +88,13 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 			direct[j] = 0;
 		}
 		ptr = (char*)direct;
-		memcpy(data, ptr, BLOCK_SIZE);
+		memcpy(buffer, ptr, BLOCK_SIZE);
 
 		// Write to disk at block no i
-		status = disk.Write(data, i);
+		status = disk.Write(buffer, i);
 		if (status != F_SUCCESS)
 			return status;
 	}
-
-	// Free Data memory as its no longer needed
-	delete data;
 
 	// We had succesfully initialised FS on disk
 	return F_SUCCESS;
@@ -113,7 +114,7 @@ FileSystem::_CreateSuperBlock(size_t TotalBlocks)
 
 
 status_t
-File::Mount(Disk& disk)
+FileSystem::Mount(Disk& disk)
 {
 	this->disk = disk;
 

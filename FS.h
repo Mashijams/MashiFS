@@ -30,7 +30,7 @@ struct Inode {
 		uint16_t		Magic;						// Magic number of Inode
 		uint32_t		Size;						// size of file
 		uint8_t			Type;						// Is it file or directory
-		uint16_t		TotalDataBlocks				// total data blocks associated with this inode
+		uint16_t		TotalDataBlocks;			// total data blocks associated with this inode
 		uint32_t		Direct[POINTERS_PER_INODE];	// Direct pointers for data
 		uint32_t		Indirect;					// Indirect pointers for data
 };
@@ -62,7 +62,7 @@ struct DirectoryEntry {
 // This structure is after superblock in first FS Block
 struct InodeMap {
 		uint8_t			Map[124];
-}
+};
 
 
 // It starts from Third block of FS and will continue...
@@ -70,7 +70,7 @@ struct InodeMap {
 struct BitMapHeader {
 		uint16_t		Magic;			// Magic number for this header
 		uint8_t			TotalBlocks;	// Total Blocks associated for Blocks bitmap
-}
+};
 
 
 class FileSystem {

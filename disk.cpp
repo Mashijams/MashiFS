@@ -2,7 +2,12 @@
 
 #include "disk.h"
 
+
+#include <stdio.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
+
 
 Disk::Disk()
 	:
@@ -68,13 +73,13 @@ Disk::Read(char* data, uint32_t blocknum)
 {
 	// set offset of file descriptor pointer to required blocknum
 	if (lseek(FileDescriptor, blocknum*BLOCK_SIZE, SEEK_SET) < 0) {
-    	fprintf(stderr, "Unable to set offset pointer in disk image %s\n\n", DiskName);
+    	fprintf(stderr, "Unable to set offset pointer in disk image\n\n");
     	return F_FAIL;
     }
 
 	// Read data from disk in data buffer
     if (::read(FileDescriptor, data, BLOCK_SIZE) != BLOCK_SIZE) {
-    	fprintf(stderr, "Unable to set read data from disk image %s\n\n", DiskName);
+    	fprintf(stderr, "Unable to set read data from disk image\n\n");
     	return F_FAIL;
     }
 
@@ -87,13 +92,13 @@ Disk::Write(char* data, uint32_t blocknum)
 {
 	// set offset of file descriptor pointer to required blocknum
 	if (lseek(FileDescriptor, blocknum*BLOCK_SIZE, SEEK_SET) < 0) {
-    	fprintf(stderr, "Unable to set offset pointer in disk image %s\n\n", DiskName);
+    	fprintf(stderr, "Unable to set offset pointer in disk image\n\n");
     	return F_FAIL;
     }
 
 	// Read data from disk in data buffer
     if (::write(FileDescriptor, data, BLOCK_SIZE) != BLOCK_SIZE) {
-    	fprintf(stderr, "Unable to set write data from disk image %s\n\n", DiskName);
+    	fprintf(stderr, "Unable to set write data from disk image\n\n");
     	return F_FAIL;
     }
 
