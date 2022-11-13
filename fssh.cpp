@@ -3,7 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <map>
 
 
 // file system headers
@@ -15,11 +16,37 @@
 // Macros
 #define	StringEquals(a, b)	(strcmp((a), (b)) == 0)
 
+// Map for storing shell command equivalent code
+std::map<std::string, Command> command_hash;
 
 // Command Shell functions
 status_t	Mount(Disk &disk, FileSystem &fs, char *DiskName);
 status_t	Create(Disk &disk, FileSystem &fs, char *DiskName, size_t TotalBlocks);
-void		Shell(FileSystem &fs);
+status_t	Shell(FileSystem &fs);
+status_t	Help();
+status_t	Cd(FileSystem& fs, char* arg1);
+status_t	Cat(FileSystem& fs, char* arg1);
+status_t	Mkdir(FileSystem& fs, char* arg1);
+status_t	Rm(FileSystem& fs, char* arg1);
+status_t	Ls(FileSystem& fs);
+status_t	Copy(FileSystem& fs, char* arg1, char* arg2);
+status_t	Move(FileSystem& fs, char* arg1, char* arg2);
+
+
+void
+_setup_command_hash_map()
+{
+	command_hash["help"]	=	F_HELP;
+	command_hash["cd"]		=	F_CD;
+	command_hash["cat"]		=	F_CAT;
+	command_hash["mkdir"]	=	F_MKDIR;
+	command_hash["rm"]		=	F_RM;
+	command_hash["ls"]		=	F_LS;
+	command_hash["copy"]	=	F_COPY;
+	command_hash["move"]	=	F_MOVE;
+	command_hash["quit"]	=	F_QUIT;
+	command_hash["exit"]	=	F_EXIT;
+}
 
 
 // Main execution
@@ -28,37 +55,40 @@ int main (int argc, char* argv[]) {
 	FileSystem	fs;
 
 	if (argc != 4 && argc != 3) {
-		fprintf(stderr, "Usage:  <Mount> <DiskName>\n\n");
-		fprintf(stderr, "Usage:  <Create> <DiskName> <TotalBlocks>\n\n");
+		fprintf(stderr, "Usage:  <mount> <DiskName>\n\n");
+		fprintf(stderr, "Usage:  <create> <DiskName> <TotalBlocks>\n\n");
     	return EXIT_FAILURE;
 	}
 
-	// If we are creating a new disk with MashiFS
-	if (StringEquals(argv[1], "Create")) {
+	// setup command_hash map
+	_setup_command_hash_map();
+
+	if (StringEquals(argv[1], "create")) {
+		// If we are creating a new disk with MashiFS
 		status_t status = Create(disk, fs, argv[2], atoi(argv[3]));
-		if (status == F_SUCCESS) {
-			// if creation and mount is successful run our shell
-			Shell(fs);
-			return EXIT_SUCCESS;
-		}
+		if (status != F_SUCCESS)
+			return EXIT_FAILURE;
 
-		// return failure otherwise
-		return EXIT_FAILURE;
-	}
+		status = Shell(fs);
+		if (status != F_SUCCESS)
+			return EXIT_FAILURE;
 
-	// If we are mounting existing disk
-	if (StringEquals(argv[1], "Mount")) {
+	} else if (StringEquals(argv[1], "mount")) {
+		// If we are mounting existing disk
 		status_t status = Mount(disk, fs, argv[2]);
-		if (status == F_SUCCESS) {
-			// if mount is successful run our shell
-			Shell(fs);
-			return EXIT_SUCCESS;
-		}
+		if (status != F_SUCCESS)
+			return EXIT_FAILURE;
 
-		// return failure otherwise
-		return EXIT_FAILURE;
+		status = Shell(fs);
+		if (status != F_SUCCESS)
+			return EXIT_FAILURE;
+
+	} else {
+		fprintf(stderr, "Usage:  <mount> <DiskName>\n\n");
+		fprintf(stderr, "Usage:  <create> <DiskName> <TotalBlocks>\n\n");
 	}
 
+	return EXIT_SUCCESS;
 }
 
 
@@ -102,8 +132,158 @@ Mount(Disk &disk, FileSystem &fs, char *DiskName)
 }
 
 
-void
+status_t
 Shell(FileSystem &fs)
 {
-	printf("Currently not implemented\n\n");
+	while(true) {
+
+		char name[100] = "";
+
+		fprintf(stderr, "fssh>%s> ", name);
+    	fflush(stderr);
+
+		char line[BUFSIZ], cmd[BUFSIZ], arg1[BUFSIZ], arg2[BUFSIZ];
+
+		// read the input from user in line
+		if (fgets(line, BUFSIZ, stdin) == NULL) {
+    	    break;
+    	}
+
+		// set command strings from line to respective variables
+    	int args = sscanf(line, "%s %s %s", cmd, arg1, arg2);
+    	if (args == 0) {
+			// if no command is entered
+    	    continue;
+		}
+
+		status_t status;
+
+		Command c;
+
+		if (command_hash.find(cmd) != command_hash.end())
+			c = command_hash[cmd];
+		else
+			c = F_UNKNOWN;
+
+		switch(c) {
+
+			case F_HELP:
+					status = Help();
+					break;
+
+			case F_CD:
+					status = Cd(fs, arg1);
+					break;
+
+			case F_CAT:
+					status = Cat(fs, arg1);
+					break;
+
+			case F_MKDIR:
+					status = Mkdir(fs, arg1);
+					break;
+
+			case F_RM:
+					status = Rm(fs, arg1);
+					break;
+
+			case F_LS:
+					status = Ls(fs);
+					break;
+
+			case F_COPY:
+					status = Copy(fs, arg1, arg2);
+					break;
+
+			case F_MOVE:
+					status = Move(fs, arg1, arg2);
+					break;
+
+			case F_QUIT:
+					printf("Quiting FS shell\n");
+					return F_SUCCESS;
+
+			case F_EXIT:
+					printf("Quiting FS shell\n");
+					return F_SUCCESS;
+
+			case F_UNKNOWN:
+					printf("Unknown command: %s\n", line);
+	    			printf("Type 'help' for a list of commands.\n\n");
+					status = F_SUCCESS;
+					break;
+
+			default:
+					break;
+		}
+
+		if (status != F_SUCCESS)
+			return F_FAIL;
+	}
+
+	return F_SUCCESS;
+}
+
+
+status_t
+Help()
+{
+	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Cd(FileSystem& fs, char* arg1)
+{
+	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Cat(FileSystem& fs, char* arg1)
+{
+	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Mkdir(FileSystem& fs, char* arg1)
+{
+	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Rm(FileSystem& fs, char* arg1)
+{
+	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Ls(FileSystem& fs)
+{
+	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Copy(FileSystem& fs, char* arg1, char* arg2)
+{
+	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Move(FileSystem& fs, char* arg1, char* arg2)
+{
+	// write here
+	return F_SUCCESS;
 }

@@ -17,4 +17,19 @@ enum File_Type {
 };
 
 
+// This enum will store shell command hash
+enum Command {
+	F_HELP,
+	F_CD,
+	F_CAT,
+	F_MKDIR,
+	F_RM,
+	F_LS,
+	F_COPY,
+	F_MOVE,
+	F_QUIT,
+	F_EXIT,
+	F_UNKNOWN,
+};
+
 #endif
