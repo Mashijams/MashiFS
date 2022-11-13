@@ -76,14 +76,16 @@ public:
 			status_t		Init(Disk& disk, size_t TotalBlocks);
 			status_t		Mount(Disk& disk);
 			status_t		CreateDir(char* name);
+			status_t		ChangeDir(char* name);
 			size_t			Size();
 
 private:
 			status_t		_CreateSuperBlock(size_t TotalBlocks);
 			status_t		_WriteInodeToDisk(uint16_t* inumber, Inode* inode);
-			status_t		_ReadInodeFromDisk(uint16_t inumber, Inode* inode);
-			status_t		_CreateDirectoryHeader(uint32_t * blocknum, char* name);
+			status_t		_ReadInodeFromDisk(uint16_t* inumber, Inode* inode);
+			status_t		_CreateDirectoryHeader(uint32_t* blocknum, char* name);
 			status_t		_CreateDirInode(uint16_t inumber, Inode* inode, char* name);
+			status_t		_SearchForEntry(char* name);
 			uint16_t		_SearchFreeInode();
 			uint32_t		_SearchFreeBlock();
 			uint16_t		_SizeOfDirectoryHeader(DirectoryHeader* header);

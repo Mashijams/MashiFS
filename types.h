@@ -7,6 +7,7 @@
 enum status_t {
 	F_SUCCESS,
 	F_FAIL,
+	F_ENTRY_NOT_EXIST,
 };
 
 

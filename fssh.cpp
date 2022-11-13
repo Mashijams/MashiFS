@@ -137,9 +137,9 @@ Mount(Disk &disk, FileSystem &fs, char *DiskName)
 status_t
 Shell(FileSystem &fs)
 {
-	while(true) {
+	char name[100] = "";
 
-		char name[100] = "";
+	while(true) {
 
 		fprintf(stderr, "fssh>%s> ", name);
     	fflush(stderr);
@@ -174,7 +174,7 @@ Shell(FileSystem &fs)
 					break;
 
 			case F_CD:
-					status = Cd(fs, arg1);
+					status = Cd(fs, arg1, name);
 					break;
 
 			case F_CAT:
@@ -251,10 +251,14 @@ Help()
 
 
 status_t
-Cd(FileSystem& fs, char* arg1)
+Cd(FileSystem& fs, char* arg1, char* name)
 {
-	// write here
-	return F_SUCCESS;
+	status_t status = fs.ChangeDir(arg1, name);
+	if (status == F_ENTRY_NOT_EXIST) {
+		printf("Directory does not exist\n\n");
+		return F_SUCCESS;
+	}
+	return status;
 }
 
 
@@ -276,8 +280,8 @@ Touch(FileSystem& fs, char* arg1)
 status_t
 Mkdir(FileSystem& fs, char* arg1)
 {
-	// write here
-	return F_SUCCESS;
+	status_t status = fs.CreateDir(arg1);
+	return status;
 }
 
 

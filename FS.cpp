@@ -268,6 +268,41 @@ FileSystem::CreateDir(char* name)
 }
 
 
+status_t
+FileSystem::ChangeDir(char* name, char* dirName)
+{
+	// First search for entry
+	status_t status = _SearchForEntry(name);
+	if (status != F_SUCCESS)
+		return status;
+
+	// Read this directory Inode and Test it
+	status = _ReadInodeFromDisk(&inum, &fInode);
+
+	if (fInode.Magic != IN_MAGIC) {
+		fprintf(stderr, "Wrong magic number for root Inode\n\n");
+		return F_FAIL;
+	}
+
+	// Get Directory name from Disk
+	char data[BLOCK_SIZE];
+	status = disk.Read(data, fInode.Direct[0]);
+	if (status != F_SUCCESS)
+		return status;
+
+	DirectoryHeader* header = (DirectoryHeader*)data;
+	// Not root directory
+	if (strcmp(header->name, "..") == 1) {
+		memcpy(dirName, header->name, header->namelen);
+	}
+	else { // It is root directory
+		dirName[0] = '\0';
+	}
+
+	// Successfully changed directory
+	return F_SUCCESS;
+}
+
 size_t
 FileSystem::Size()
 {
@@ -467,4 +502,35 @@ FileSystem::_CreateDirInode(uint16_t inumber, Inode* inode, char* name)
 
 	// Inode written to disk successfully
 	return F_SUCCESS;
+}
+
+
+status_t
+FileSystem::_SearchForEntry(char* name)
+{
+	status_t status;
+
+	// Traverse through all data blocks
+	for (uint8_t i = 0; i < fInode.TotalDataBlocks; i++) {
+		char data[BLOCK_SIZE];
+		status = disk.Read(data, fInode.Direct[i]);
+		if (status != F_SUCCESS)
+			return status;
+
+		DirectoryHeader* header = (DirectoryHeader*)data;
+		DirectoryEntry* entry;
+		int offset = _SizeOfDirectoryHeader(header);
+
+		//Traverse through all entries
+		for (int j = 0; j < header->TotalEntries; j++) {
+			entry = (DirectoryEntry*)(data + offset);
+			if (strcmp(name, entry->name) == 0) {
+				inum = entry->Inumber;
+				return F_SUCCESS;
+			}
+			offset += _SizeOfEntry(entry);
+		}
+	}
+
+	return F_ENTRY_NOT_EXIST
 }
