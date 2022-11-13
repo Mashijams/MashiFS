@@ -228,7 +228,17 @@ Shell(FileSystem &fs)
 status_t
 Help()
 {
-	// write here
+	printf("Commands are:\n\n");
+    printf("help                (To list all commands supported)\n\n");
+    printf("cd <dir>            (change directory to <dir>)\n\n");
+    printf("cat <file>          (see <file> contents)\n\n");
+    printf("mkdir <dir>         (create new directory <dir>)\n\n");
+    printf("rm <file/dir>       (remove directory or file)\n\n");
+    printf("ls                  (list contents inside current directory)\n\n");
+    printf("copy <path>         (copy file from path to current directory)\n\n");
+    printf("move <file1> <path> (move file1 from directory to path)\n\n");
+    printf("quit                (quit this shell)\n\n");
+    printf("exit                (exit this shell)\n\n");
 	return F_SUCCESS;
 }
 
