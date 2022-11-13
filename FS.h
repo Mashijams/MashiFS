@@ -13,6 +13,7 @@
 #define POINTERS_PER_INODE 5
 #define POINTERS_PER_BLOCK 1024
 #define BITMAPS_PER_BLOCK 4096
+#define MAX_DATA_BLOCKS 5
 #define TOTAL_INODE 124
 
 
@@ -42,6 +43,7 @@ struct DirectoryHeader {
 		uint16_t		Magic;			// Magic number for header
 		uint16_t		FreeSpace;		// Total Freespace in this directory block
 		uint16_t		TotalEntries;	// Total number of entries in this directory
+		uint8_t			namelen;		// Directory name length
 		char			name[]			// Directory name
 };
 
@@ -73,19 +75,26 @@ public:
 							~FileSystem();
 			status_t		Init(Disk& disk, size_t TotalBlocks);
 			status_t		Mount(Disk& disk);
+			status_t		CreateDir(char* name);
 			size_t			Size();
 
 private:
 			status_t		_CreateSuperBlock(size_t TotalBlocks);
-			status_t		_CreateInode(uint16_t* inumber);
+			status_t		_WriteInodeToDisk(uint16_t* inumber, Inode* inode);
+			status_t		_ReadInodeFromDisk(uint16_t inumber, Inode* inode);
+			status_t		_CreateDirectoryHeader(uint32_t * blocknum);
+			status_t		_CreateDirInode(uint16_t inumber, Inode* inode, char* name);
 			uint16_t		_SearchFreeInode();
 			uint32_t		_SearchFreeBlock();
+			uint16_t		_SizeOfDirectoryHeader(DirectoryHeader* header);
+			uint16_t		_SizeOfEntry(DirectoryEntry* entry);
 
 			Disk			disk;
 			SuperBlock		sb;
 			char*			buffer;
 			uint16_t		inum;
 			InodeMap*		map;
+			Inode			fInode;
 };
 
 #endif
