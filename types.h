@@ -22,6 +22,7 @@ enum Command {
 	F_HELP,
 	F_CD,
 	F_CAT,
+	F_TOUCH,
 	F_MKDIR,
 	F_RM,
 	F_LS,

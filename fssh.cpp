@@ -26,6 +26,7 @@ status_t	Shell(FileSystem &fs);
 status_t	Help();
 status_t	Cd(FileSystem& fs, char* arg1);
 status_t	Cat(FileSystem& fs, char* arg1);
+status_t	Touch(FileSystem& fs, char* arg1);
 status_t	Mkdir(FileSystem& fs, char* arg1);
 status_t	Rm(FileSystem& fs, char* arg1);
 status_t	Ls(FileSystem& fs);
@@ -39,6 +40,7 @@ _setup_command_hash_map()
 	command_hash["help"]	=	F_HELP;
 	command_hash["cd"]		=	F_CD;
 	command_hash["cat"]		=	F_CAT;
+	command_hash["touch"]	=	F_TOUCH;
 	command_hash["mkdir"]	=	F_MKDIR;
 	command_hash["rm"]		=	F_RM;
 	command_hash["ls"]		=	F_LS;
@@ -179,6 +181,10 @@ Shell(FileSystem &fs)
 					status = Cat(fs, arg1);
 					break;
 
+			case F_TOUCH:
+					status = Touch(fs, arg1);
+					break;
+
 			case F_MKDIR:
 					status = Mkdir(fs, arg1);
 					break;
@@ -232,6 +238,7 @@ Help()
     printf("help                (To list all commands supported)\n\n");
     printf("cd <dir>            (change directory to <dir>)\n\n");
     printf("cat <file>          (see <file> contents)\n\n");
+	printf("touch <file>        (create new <file>)\n\n");
     printf("mkdir <dir>         (create new directory <dir>)\n\n");
     printf("rm <file/dir>       (remove directory or file)\n\n");
     printf("ls                  (list contents inside current directory)\n\n");
@@ -255,6 +262,13 @@ status_t
 Cat(FileSystem& fs, char* arg1)
 {
 	// write here
+	return F_SUCCESS;
+}
+
+
+status_t
+Touch(FileSystem& fs, char* arg1)
+{
 	return F_SUCCESS;
 }
 
