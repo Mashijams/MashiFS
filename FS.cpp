@@ -62,16 +62,6 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 		return status;
 
 	/*
-		First block for file system is reserved
-		for Inodes.
-		We need to first create root inode for FS
-	*/
-	char temp[3] = "..";
-	status = _CreateDirInode(0, &fInode, temp);
-	if (status != F_SUCCESS)
-		return status;
-
-	/*
 		From second onwards we have data block bitmap
 		Its header is in zeroth block
 	*/
@@ -99,6 +89,16 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 		if (status != F_SUCCESS)
 			return status;
 	}
+
+	/*
+		First block for file system is reserved
+		for Inodes.
+		We need to first create root inode for FS
+	*/
+	char temp[3] = "..";
+	status = _CreateDirInode(0, &fInode, temp);
+	if (status != F_SUCCESS)
+		return status;
 
 	// We had succesfully initialised FS on disk
 	return F_SUCCESS;
