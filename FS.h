@@ -82,7 +82,7 @@ private:
 			status_t		_CreateSuperBlock(size_t TotalBlocks);
 			status_t		_WriteInodeToDisk(uint16_t* inumber, Inode* inode);
 			status_t		_ReadInodeFromDisk(uint16_t inumber, Inode* inode);
-			status_t		_CreateDirectoryHeader(uint32_t * blocknum);
+			status_t		_CreateDirectoryHeader(uint32_t * blocknum, char* name);
 			status_t		_CreateDirInode(uint16_t inumber, Inode* inode, char* name);
 			uint16_t		_SearchFreeInode();
 			uint32_t		_SearchFreeBlock();

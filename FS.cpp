@@ -158,6 +158,8 @@ FileSystem::CreateDir(char* name)
 	for (uint8_t i = 0; i < fInode.TotalDataBlocks; i++) {
 		char data[BLOCK_SIZE];
 		status = disk.Read(data, fInode.Direct[i]);
+		if (status != F_SUCCESS)
+			return status;
 		DirectoryHeader* header = (DirectoryHeader*)data;
 
 		// Found an existing block with free space
@@ -202,9 +204,69 @@ FileSystem::CreateDir(char* name)
 	}
 
 	// Allocate new directory block
+	fInode.Direct[fInode.TotalDataBlocks] = _SearchFreeBlock();
+	if (fInode.Direct[fInode.TotalDataBlocks] == 0) {
+		fprintf(stderr, "No free data block available\n\n");
+		return F_FAIL;
+	}
 
+	status = _CreateDirectoryHeader(fInode.Direct[fInode.TotalDataBlocks], name);
+	if (status != F_SUCCESS)
+		return status;
 
+	char data[BLOCK_SIZE];
+	status = disk.Read(data, fInode.Direct[fInode.TotalDataBlocks]);
+	if (status != F_SUCCESS)
+		return status;
+	DirectoryHeader* header = (DirectoryHeader*)data;
+
+	if (header->FreeSpace >= requiredSpace) {
+			// Found block now add entry
+			DirectoryEntry entry;
+			entry.Inumber = inumber;
+			entry.namelen = strlen(name);
+			memcpy(entry.name, name, entry.namelen);
+
+			// write entry to data
+			char* ptr;
+			int offset = BLOCK_SIZE - header->FreeSpace;
+			ptr = (char*)&entry;
+			memcpy(data + offset, ptr, _SizeOfEntry(&entry));
+
+			// update header freeSpace
+			offset = 0;
+			header->FreeSpace -= _SizeOfEntry(&entry);
+			header->TotalEntries += 1;
+			ptr = (char*)header;
+			memcpy(data, ptr, _SizeOfDirectoryHeader(header));
+
+			// write data to disk
+			status = disk.write(data, fInode.Direct[fInode.TotalDataBlocks]);
+
+			if (status != F_SUCCESS)
+				return status;
+
+			// Allocate inode for new directory
+			Inode newInode;
+			status = _CreateDirInode(inumber, &newInode, name);
+
+			return status;
+	}
+	else {
+		fprintf(stderr, "Name is too big\n\n");
+		return F_FAIL;
+	}
+
+	// update existing Inode
+	fInode.TotalDataBlocks += 1;
+	status = _WriteInodeToDisk(inum, &fInode);
+	if (status != F_SUCCESS)
+		return status;
+
+	// Directory successfully created
+	return F_SUCCESS;
 }
+
 
 size_t
 FileSystem::Size()
@@ -322,16 +384,26 @@ FileSystem::_CreateDirectoryHeader(uint32_t* blocknum, char* name)
 	DirectoryHeader header;
 
 	header.Magic = DIR_MAGIC;
-	header.TotalEntries = 0;
+	header.TotalEntries = 1;
 	header.namelen = strlen(name);
-	memcpy(header.name, name, namelen);
-	header.FreeSpace = BLOCK_SIZE - _SizeOfDirectoryHeader(&header);
+	memcpy(header.name, name, header.namelen);
+
+	// Create parent entry
+	DirectoryEntry entry;
+	entry.Inumber = inum;
+	entry.namelen = 2;
+	memcpy(entry.name, "..", entry.namelen);
+
+	header.FreeSpace = BLOCK_SIZE - _SizeOfDirectoryHeader(&header) - _SizeOfEntry(&entry);
 
 	char data[BLOCK_SIZE];
 
 	char* ptr;
 	ptr = (char*)&header;
 	memcpy(data, ptr, _SizeOfDirectoryHeader(&header));
+
+	ptr = (char*)&entry;
+	memcpy(data + _SizeOfDirectoryHeader(&header), ptr, _SizeOfEntry(&entry));
 
 	status_t status = disk.Write(data, blocknum);
 	if (status != F_SUCCESS)
