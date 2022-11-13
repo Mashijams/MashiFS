@@ -10,7 +10,6 @@
 #define SB_MAGIC 0x4C5
 #define IN_MAGIC 0xCEF
 #define	DIR_MAGIC 0xCEE
-#define BITMAP_MAGIC 0xCFF
 #define POINTERS_PER_INODE 5
 #define POINTERS_PER_BLOCK 1024
 #define BITMAPS_PER_BLOCK 4096
@@ -23,6 +22,7 @@ struct SuperBlock {
 		size_t			TotalBlocks;		// total number of blocks in file system
 		uint16_t		Root;				// root inode number of file system (typically 0)
 		uint32_t		TotalFreeBlocks;	// Total Free Blocks available
+		uint8_t			TotalBitmapBlocks;	// Total Blocks associated for block bitmap
 };
 
 
@@ -42,6 +42,7 @@ struct DirectoryHeader {
 		uint16_t		Magic;			// Magic number for header
 		uint16_t		FreeSpace;		// Total Freespace in this directory block
 		uint16_t		TotalEntries;	// Total number of entries in this directory
+		char			name[]			// Directory name
 };
 
 
@@ -66,14 +67,6 @@ struct InodeMap {
 };
 
 
-// It starts from Third block of FS and will continue...
-// BitMap header is in zero block
-struct BitMapHeader {
-		uint16_t		Magic;			// Magic number for this header
-		uint8_t			TotalBlocks;	// Total Blocks associated for Blocks bitmap
-};
-
-
 class FileSystem {
 public:
 							FileSystem();
@@ -81,12 +74,18 @@ public:
 			status_t		Init(Disk& disk, size_t TotalBlocks);
 			status_t		Mount(Disk& disk);
 			size_t			Size();
+
 private:
 			status_t		_CreateSuperBlock(size_t TotalBlocks);
+			status_t		_CreateInode(uint16_t* inumber);
+			uint16_t		_SearchFreeInode();
+			uint32_t		_SearchFreeBlock();
 
 			Disk			disk;
 			SuperBlock		sb;
 			char*			buffer;
+			uint16_t		inum;
+			InodeMap*		map;
 };
 
 #endif
