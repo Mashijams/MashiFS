@@ -38,11 +38,11 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 
 	// Create Inode BitMap
 	for (int i = 0; i < 124; i++) {
-		map.Map[i] = 0;
+		map->Map[i] = 0;
 	}
 
 	// Root dir Inode is initialized
-	map.Map[0] = 1;
+	map->Map[0] = 1;
 
 	// write first block structures to disk now
 	size_t offset = 0;
@@ -52,7 +52,7 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 	memcpy(buffer + offset, ptr, sizeof(SuperBlock));
 	offset += sizeof(SuperBlock);
 
-	ptr = (char*)&map;
+	ptr = (char*)map;
 	memcpy(buffer + offset, ptr, sizeof(InodeMap));
 	offset += sizeof(InodeMap);
 
@@ -66,8 +66,8 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 		for Inodes.
 		We need to first create root inode for FS
 	*/
-
-	status = _CreateDirInode(0, &fInode, "..");
+	char temp[3] = "..";
+	status = _CreateDirInode(0, &fInode, temp);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -86,7 +86,7 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 			direct[0] = direct[1] = 1;
 
 			// Bitmaps blocks are reserved as well
-			for (j = 2; j < 2 + sb.TotalBitmapBlocks; j++) {
+			for (int j = 2; j < 2 + sb.TotalBitmapBlocks; j++) {
 				direct[j] = 1;
 			}
 		}
@@ -123,10 +123,10 @@ FileSystem::Mount(Disk& disk)
 	}
 
 	// Currently we are at root directory
-	inum = sb.root;
+	inum = sb.Root;
 
 	// Initialise and Test Inode
-	status = _ReadInodeFromDisk(inum, &fInode);
+	status = _ReadInodeFromDisk(&inum, &fInode);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -184,7 +184,7 @@ FileSystem::CreateDir(char* name)
 			memcpy(data, ptr, _SizeOfDirectoryHeader(header));
 
 			// write data to disk
-			status = disk.write(data, fInode.Direct[i]);
+			status = disk.Write(data, fInode.Direct[i]);
 
 			if (status != F_SUCCESS)
 				return status;
@@ -210,7 +210,7 @@ FileSystem::CreateDir(char* name)
 		return F_FAIL;
 	}
 
-	status = _CreateDirectoryHeader(fInode.Direct[fInode.TotalDataBlocks], name);
+	status = _CreateDirectoryHeader(&fInode.Direct[fInode.TotalDataBlocks], name);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -241,7 +241,7 @@ FileSystem::CreateDir(char* name)
 			memcpy(data, ptr, _SizeOfDirectoryHeader(header));
 
 			// write data to disk
-			status = disk.write(data, fInode.Direct[fInode.TotalDataBlocks]);
+			status = disk.Write(data, fInode.Direct[fInode.TotalDataBlocks]);
 
 			if (status != F_SUCCESS)
 				return status;
@@ -259,7 +259,7 @@ FileSystem::CreateDir(char* name)
 
 	// update existing Inode
 	fInode.TotalDataBlocks += 1;
-	status = _WriteInodeToDisk(inum, &fInode);
+	status = _WriteInodeToDisk(&inum, &fInode);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -360,8 +360,8 @@ FileSystem::_SearchFreeInode()
 		return first free Inode number
 	*/
 	for (uint16_t i = 1; i < 124; i++) {
-		if (map[i] == 0) {
-			map[i] = 1;
+		if (map->Map[i] == 0) {
+			map->Map[i] = 1;
 			char data[BLOCK_SIZE];
 			disk.Read(data, 0);
 			char* ptr;
@@ -417,7 +417,7 @@ FileSystem::_WriteInodeToDisk(uint16_t* inumber, Inode* inode)
 
 	char* ptr;
 	ptr = (char*)inode;
-	memcpy(data + inumber * sizeof(Inode), ptr, sizeof(Inode));
+	memcpy(data + *inumber * sizeof(Inode), ptr, sizeof(Inode));
 
 	status = disk.Write(data, 1);
 	if (status != F_SUCCESS)
@@ -436,7 +436,7 @@ FileSystem::_ReadInodeFromDisk(uint16_t* inumber, Inode* inode)
 	if(status != F_SUCCESS)
 		return status;
 
-	inode = (Inode*)(data + inumber * sizeof(Inode));
+	inode = (Inode*)(data + *inumber * sizeof(Inode));
 
 	return F_SUCCESS;
 }
@@ -469,7 +469,7 @@ FileSystem::_CreateDirectoryHeader(uint32_t* blocknum, char* name)
 	ptr = (char*)&entry;
 	memcpy(data + _SizeOfDirectoryHeader(&header), ptr, _SizeOfEntry(&entry));
 
-	status_t status = disk.Write(data, blocknum);
+	status_t status = disk.Write(data, *blocknum);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -511,13 +511,13 @@ FileSystem::_CreateDirInode(uint16_t inumber, Inode* inode, char* name)
 	}
 
 	// Initialise directory header for this block
-	status = _CreateDirectoryHeader(inode->Direct[0], name);
+	status_t status = _CreateDirectoryHeader(&inode->Direct[0], name);
 	if (status != F_SUCCESS)
 		return status;
 
 	// Now write Inode to disk
 	char data[BLOCK_SIZE];
-	status_t status = disk.Read(data, 1);
+	status = disk.Read(data, 1);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -561,5 +561,5 @@ FileSystem::_SearchForEntry(char* name)
 		}
 	}
 
-	return F_ENTRY_NOT_EXIST
+	return F_ENTRY_NOT_EXIST;
 }

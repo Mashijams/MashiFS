@@ -24,7 +24,7 @@ status_t	Mount(Disk &disk, FileSystem &fs, char *DiskName);
 status_t	Create(Disk &disk, FileSystem &fs, char *DiskName, size_t TotalBlocks);
 status_t	Shell(FileSystem &fs);
 status_t	Help();
-status_t	Cd(FileSystem& fs, char* arg1);
+status_t	Cd(FileSystem& fs, char* arg1, char* name);
 status_t	Cat(FileSystem& fs, char* arg1);
 status_t	Touch(FileSystem& fs, char* arg1);
 status_t	Mkdir(FileSystem& fs, char* arg1);

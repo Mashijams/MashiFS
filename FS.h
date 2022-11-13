@@ -44,7 +44,7 @@ struct DirectoryHeader {
 		uint16_t		FreeSpace;		// Total Freespace in this directory block
 		uint16_t		TotalEntries;	// Total number of entries in this directory
 		uint8_t			namelen;		// Directory name length
-		char			name[]			// Directory name
+		char			name[];			// Directory name
 };
 
 
@@ -76,7 +76,7 @@ public:
 			status_t		Init(Disk& disk, size_t TotalBlocks);
 			status_t		Mount(Disk& disk);
 			status_t		CreateDir(char* name);
-			status_t		ChangeDir(char* name);
+			status_t		ChangeDir(char* name, char* dirName);
 			status_t		ListAllEntries();
 			size_t			Size();
 
