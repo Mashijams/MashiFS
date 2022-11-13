@@ -303,6 +303,35 @@ FileSystem::ChangeDir(char* name, char* dirName)
 	return F_SUCCESS;
 }
 
+
+status_t
+FileSystem::ListAllEntries()
+{
+	status_t status;
+
+	// Traverse through all data blocks
+	for (uint8_t i = 0; i < fInode.TotalDataBlocks; i++) {
+		char data[BLOCK_SIZE];
+		status = disk.Read(data, fInode.Direct[i]);
+		if (status != F_SUCCESS)
+			return status;
+
+		DirectoryHeader* header = (DirectoryHeader*)data;
+		DirectoryEntry* entry;
+		int offset = _SizeOfDirectoryHeader(header);
+
+		//Traverse through all entries
+		for (int j = 0; j < header->TotalEntries; j++) {
+			entry = (DirectoryEntry*)(data + offset);
+			printf("%s\n", entry->name);
+			offset += _SizeOfEntry(entry);
+		}
+	}
+
+	return F_SUCCESS;
+}
+
+
 size_t
 FileSystem::Size()
 {

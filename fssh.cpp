@@ -296,8 +296,8 @@ Rm(FileSystem& fs, char* arg1)
 status_t
 Ls(FileSystem& fs)
 {
-	// write here
-	return F_SUCCESS;
+	status_t status = fs.ListAllEntries();
+	return status;
 }
 
 

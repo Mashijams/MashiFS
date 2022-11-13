@@ -77,6 +77,7 @@ public:
 			status_t		Mount(Disk& disk);
 			status_t		CreateDir(char* name);
 			status_t		ChangeDir(char* name);
+			status_t		ListAllEntries();
 			size_t			Size();
 
 private:
