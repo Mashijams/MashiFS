@@ -97,7 +97,10 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 	*/
 	char temp[3] = "..";
 	inum = sb.Root;
-	status = _CreateDirInode(0, &fInode, temp);
+	status = _CreateDirInode(0, temp);
+	if (status != F_SUCCESS)
+		return status;
+	status = _ReadInodeFromDisk(0, fInode);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -130,7 +133,7 @@ FileSystem::Mount(Disk& disk)
 	inum = sb.Root;
 
 	// Initialise and Test Inode
-	status = _ReadInodeFromDisk(&inum, fInode);
+	status = _ReadInodeFromDisk(inum, fInode);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -193,13 +196,11 @@ FileSystem::CreateDir(char* name)
 
 			// write data to disk
 			status = disk.Write(data, fInode.Direct[i]);
-
 			if (status != F_SUCCESS)
 				return status;
 
 			// Allocate inode for new directory
-			Inode newInode;
-			status = _CreateDirInode(inumber, &newInode, name);
+			status = _CreateDirInode(inumber, name);
 
 			return status;
 		}
@@ -218,7 +219,7 @@ FileSystem::CreateDir(char* name)
 		return F_FAIL;
 	}
 
-	status = _CreateDirectoryHeader(&fInode.Direct[fInode.TotalDataBlocks], name);
+	status = _CreateDirectoryHeader(fInode.Direct[fInode.TotalDataBlocks], name);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -250,8 +251,7 @@ FileSystem::CreateDir(char* name)
 				return status;
 
 			// Allocate inode for new directory
-			Inode newInode;
-			status = _CreateDirInode(inumber, &newInode, name);
+			status = _CreateDirInode(inumber, name);
 
 			return status;
 	}
@@ -262,7 +262,7 @@ FileSystem::CreateDir(char* name)
 
 	// update existing Inode
 	fInode.TotalDataBlocks += 1;
-	status = _WriteInodeToDisk(&inum, &fInode);
+	status = _WriteInodeToDisk(inum, &fInode);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -280,7 +280,7 @@ FileSystem::ChangeDir(char* name, char* dirName)
 		return status;
 
 	// Read this directory Inode and Test it
-	status = _ReadInodeFromDisk(&inum, fInode);
+	status = _ReadInodeFromDisk(inum, fInode);
 
 	if (fInode.Magic != IN_MAGIC) {
 		fprintf(stderr, "Wrong magic number for root Inode\n\n");
@@ -317,7 +317,7 @@ FileSystem::ListAllEntries()
 		DirectoryHeader* header = (DirectoryHeader*)data;
 		DirectoryEntry* entry;
 		int offset = _SizeOfDirectoryHeader(header);
-		printf("header->Totalentries = %d\n", header->TotalEntries);
+
 		//Traverse through all entries
 		for (int j = 0; j < header->TotalEntries; j++) {
 			entry = (DirectoryEntry*)(data + offset);
@@ -405,7 +405,7 @@ FileSystem::_SearchFreeBlock()
 
 
 status_t
-FileSystem::_WriteInodeToDisk(uint16_t* inumber, Inode* inode)
+FileSystem::_WriteInodeToDisk(uint16_t inumber, Inode* inode)
 {
 	char data[BLOCK_SIZE];
 
@@ -415,7 +415,7 @@ FileSystem::_WriteInodeToDisk(uint16_t* inumber, Inode* inode)
 
 	char* ptr;
 	ptr = (char*)inode;
-	memcpy(data + *inumber * sizeof(Inode), ptr, sizeof(Inode));
+	memcpy(data + inumber * sizeof(Inode), ptr, sizeof(Inode));
 
 	status = disk.Write(data, 1);
 	if (status != F_SUCCESS)
@@ -426,7 +426,7 @@ FileSystem::_WriteInodeToDisk(uint16_t* inumber, Inode* inode)
 
 
 status_t
-FileSystem::_ReadInodeFromDisk(uint16_t* inumber, Inode& inode)
+FileSystem::_ReadInodeFromDisk(uint16_t inumber, Inode& inode)
 {
 	char data[BLOCK_SIZE];
 
@@ -434,14 +434,14 @@ FileSystem::_ReadInodeFromDisk(uint16_t* inumber, Inode& inode)
 	if(status != F_SUCCESS)
 		return status;
 
-	inode = *((Inode*)(data + *inumber * sizeof(Inode)));
+	inode = *((Inode*)(data + inumber * sizeof(Inode)));
 
 	return F_SUCCESS;
 }
 
 
 status_t
-FileSystem::_CreateDirectoryHeader(uint32_t* blocknum, char* name)
+FileSystem::_CreateDirectoryHeader(uint32_t blocknum, char* name)
 {
 	DirectoryHeader header;
 
@@ -471,7 +471,7 @@ FileSystem::_CreateDirectoryHeader(uint32_t* blocknum, char* name)
 	ptr = (char*)&entry;
 	memcpy(data + _SizeOfDirectoryHeader(&header), ptr, _SizeOfEntry(&entry));
 
-	status_t status = disk.Write(data, *blocknum);
+	status_t status = disk.Write(data, blocknum);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -494,27 +494,29 @@ FileSystem::_SizeOfEntry(DirectoryEntry* entry)
 
 
 status_t
-FileSystem::_CreateDirInode(uint16_t inumber, Inode* inode, char* name)
+FileSystem::_CreateDirInode(uint16_t inumber, char* name)
 {
-	inode->Magic			=	IN_MAGIC;
-	inode->Size				=	0;
-	inode->Type				=	F_IS_DIR;
-	inode->TotalDataBlocks	=	1;
+	Inode inode;
+
+	inode.Magic				=	IN_MAGIC;
+	inode.Size				=	0;
+	inode.Type				=	F_IS_DIR;
+	inode.TotalDataBlocks	=	1;
 
 	for (uint8_t i = 1; i < 5; i++)
-		inode->Direct[i] = 0;
+		inode.Direct[i] = 0;
 
-	inode->Indirect = 0;
+	inode.Indirect = 0;
 
-	inode->Direct[0] = _SearchFreeBlock();
+	inode.Direct[0] = _SearchFreeBlock();
 
-	if (inode->Direct[0] == 0) {
+	if (inode.Direct[0] == 0) {
 		fprintf(stderr, "No free space block available\n\n");
 		return F_FAIL;
 	}
 
 	// Initialise directory header for this block
-	status_t status = _CreateDirectoryHeader(&inode->Direct[0], name);
+	status_t status = _CreateDirectoryHeader(inode.Direct[0], name);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -525,7 +527,7 @@ FileSystem::_CreateDirInode(uint16_t inumber, Inode* inode, char* name)
 		return status;
 
 	char* ptr;
-	ptr = (char*)inode;
+	ptr = (char*)&inode;
 	memcpy(data + inumber * sizeof(Inode), ptr, sizeof(Inode));
 
 	status = disk.Write(data, 1);
