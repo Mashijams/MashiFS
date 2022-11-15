@@ -96,6 +96,7 @@ FileSystem::Init(Disk& disk, size_t TotalBlocks)
 		We need to first create root inode for FS
 	*/
 	char temp[3] = "..";
+	inum = sb.Root;
 	status = _CreateDirInode(0, &fInode, temp);
 	if (status != F_SUCCESS)
 		return status;
@@ -122,11 +123,14 @@ FileSystem::Mount(Disk& disk)
 		return F_FAIL;
 	}
 
+	// Initialise InodeMap
+	*map = *((InodeMap*)(buffer + sizeof(SuperBlock)));
+
 	// Currently we are at root directory
 	inum = sb.Root;
 
 	// Initialise and Test Inode
-	status = _ReadInodeFromDisk(&inum, &fInode);
+	status = _ReadInodeFromDisk(&inum, fInode);
 	if (status != F_SUCCESS)
 		return status;
 
@@ -145,6 +149,12 @@ FileSystem::CreateDir(char* name)
 {
 	status_t status;
 
+	// if name is null return with warning
+	if (strcmp(name, "") == 0) {
+		printf("Null name for directory\n");
+		return F_SUCCESS;
+	}
+
 	// First see if we have an inode available
 	uint16_t inumber  = _SearchFreeInode();
 	if (inumber == 0) {
@@ -152,36 +162,34 @@ FileSystem::CreateDir(char* name)
 		return F_FAIL;
 	}
 
-	uint16_t requiredSpace = 3 + strlen(name);
+	// +1 for null terminated char
+	uint16_t requiredSpace = 3 + strlen(name) + 1;
 
 	// find free space from allocated directory blocks
 	for (uint8_t i = 0; i < fInode.TotalDataBlocks; i++) {
+
 		char data[BLOCK_SIZE];
 		status = disk.Read(data, fInode.Direct[i]);
 		if (status != F_SUCCESS)
 			return status;
+
 		DirectoryHeader* header = (DirectoryHeader*)data;
 
 		// Found an existing block with free space
 		if (header->FreeSpace >= requiredSpace) {
-			// Found block now add entry
-			DirectoryEntry entry;
-			entry.Inumber = inumber;
-			entry.namelen = strlen(name);
-			memcpy(entry.name, name, entry.namelen);
-
-			// write entry to data
-			char* ptr;
+			// write new entry
 			int offset = BLOCK_SIZE - header->FreeSpace;
-			ptr = (char*)&entry;
-			memcpy(data + offset, ptr, _SizeOfEntry(&entry));
+			DirectoryEntry* entry = (DirectoryEntry*)(data + offset);
+			entry->Inumber = inumber;
+			entry->namelen = strlen(name);
+			memcpy(entry->name, name, entry->namelen);
+			// make entry name null terminated
+			entry->name[entry->namelen] = '\0';
+			entry->namelen += 1;
 
 			// update header freeSpace
-			offset = 0;
-			header->FreeSpace -= _SizeOfEntry(&entry);
+			header->FreeSpace -= _SizeOfEntry(entry);
 			header->TotalEntries += 1;
-			ptr = (char*)header;
-			memcpy(data, ptr, _SizeOfDirectoryHeader(header));
 
 			// write data to disk
 			status = disk.Write(data, fInode.Direct[i]);
@@ -221,24 +229,19 @@ FileSystem::CreateDir(char* name)
 	DirectoryHeader* header = (DirectoryHeader*)data;
 
 	if (header->FreeSpace >= requiredSpace) {
-			// Found block now add entry
-			DirectoryEntry entry;
-			entry.Inumber = inumber;
-			entry.namelen = strlen(name);
-			memcpy(entry.name, name, entry.namelen);
-
-			// write entry to data
-			char* ptr;
+			// write new entry
 			int offset = BLOCK_SIZE - header->FreeSpace;
-			ptr = (char*)&entry;
-			memcpy(data + offset, ptr, _SizeOfEntry(&entry));
+			DirectoryEntry* entry = (DirectoryEntry*)(data + offset);
+			entry->Inumber = inumber;
+			entry->namelen = strlen(name);
+			memcpy(entry->name, name, entry->namelen);
+			// make entry name null terminated
+			entry->name[entry->namelen] = '\0';
+			entry->namelen += 1;
 
 			// update header freeSpace
-			offset = 0;
-			header->FreeSpace -= _SizeOfEntry(&entry);
+			header->FreeSpace -= _SizeOfEntry(entry);
 			header->TotalEntries += 1;
-			ptr = (char*)header;
-			memcpy(data, ptr, _SizeOfDirectoryHeader(header));
 
 			// write data to disk
 			status = disk.Write(data, fInode.Direct[fInode.TotalDataBlocks]);
@@ -277,7 +280,7 @@ FileSystem::ChangeDir(char* name, char* dirName)
 		return status;
 
 	// Read this directory Inode and Test it
-	status = _ReadInodeFromDisk(&inum, &fInode);
+	status = _ReadInodeFromDisk(&inum, fInode);
 
 	if (fInode.Magic != IN_MAGIC) {
 		fprintf(stderr, "Wrong magic number for root Inode\n\n");
@@ -291,13 +294,8 @@ FileSystem::ChangeDir(char* name, char* dirName)
 		return status;
 
 	DirectoryHeader* header = (DirectoryHeader*)data;
-	// Not root directory
-	if (strcmp(header->name, "..") == 1) {
-		memcpy(dirName, header->name, header->namelen);
-	}
-	else { // It is root directory
-		dirName[0] = '\0';
-	}
+	memcpy(dirName, header->name, header->namelen);
+	dirName[header->namelen] = '\0';
 
 	// Successfully changed directory
 	return F_SUCCESS;
@@ -319,7 +317,7 @@ FileSystem::ListAllEntries()
 		DirectoryHeader* header = (DirectoryHeader*)data;
 		DirectoryEntry* entry;
 		int offset = _SizeOfDirectoryHeader(header);
-
+		printf("header->Totalentries = %d\n", header->TotalEntries);
 		//Traverse through all entries
 		for (int j = 0; j < header->TotalEntries; j++) {
 			entry = (DirectoryEntry*)(data + offset);
@@ -428,7 +426,7 @@ FileSystem::_WriteInodeToDisk(uint16_t* inumber, Inode* inode)
 
 
 status_t
-FileSystem::_ReadInodeFromDisk(uint16_t* inumber, Inode* inode)
+FileSystem::_ReadInodeFromDisk(uint16_t* inumber, Inode& inode)
 {
 	char data[BLOCK_SIZE];
 
@@ -436,7 +434,7 @@ FileSystem::_ReadInodeFromDisk(uint16_t* inumber, Inode* inode)
 	if(status != F_SUCCESS)
 		return status;
 
-	inode = (Inode*)(data + *inumber * sizeof(Inode));
+	inode = *((Inode*)(data + *inumber * sizeof(Inode)));
 
 	return F_SUCCESS;
 }
@@ -451,12 +449,16 @@ FileSystem::_CreateDirectoryHeader(uint32_t* blocknum, char* name)
 	header.TotalEntries = 1;
 	header.namelen = strlen(name);
 	memcpy(header.name, name, header.namelen);
+	header.name[header.namelen] = '\0';
+	header.namelen += 1;
 
 	// Create parent entry
 	DirectoryEntry entry;
 	entry.Inumber = inum;
 	entry.namelen = 2;
 	memcpy(entry.name, "..", entry.namelen);
+	entry.name[entry.namelen] = '\0';
+	entry.namelen += 1;
 
 	header.FreeSpace = BLOCK_SIZE - _SizeOfDirectoryHeader(&header) - _SizeOfEntry(&entry);
 
@@ -505,6 +507,7 @@ FileSystem::_CreateDirInode(uint16_t inumber, Inode* inode, char* name)
 	inode->Indirect = 0;
 
 	inode->Direct[0] = _SearchFreeBlock();
+
 	if (inode->Direct[0] == 0) {
 		fprintf(stderr, "No free space block available\n\n");
 		return F_FAIL;

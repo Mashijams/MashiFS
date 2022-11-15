@@ -137,7 +137,7 @@ Mount(Disk &disk, FileSystem &fs, char *DiskName)
 status_t
 Shell(FileSystem &fs)
 {
-	char name[100] = "";
+	char name[100] = "..";
 
 	while(true) {
 
