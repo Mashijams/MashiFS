@@ -141,7 +141,7 @@ Shell(FileSystem &fs)
 
 	while(true) {
 
-		fprintf(stderr, "fssh>%s> ", name);
+		fprintf(stderr, "\033[1;33mfssh>%s> \033[0m", name);
     	fflush(stderr);
 
 		char line[BUFSIZ], cmd[BUFSIZ], arg1[BUFSIZ], arg2[BUFSIZ];
