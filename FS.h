@@ -17,7 +17,7 @@
 #define TOTAL_INODE 124
 
 
-// This superblock is at first disk block
+// This superblock is at zero disk block
 struct SuperBlock {
 		uint16_t		Magic;				// Magic number of superblock
 		size_t			TotalBlocks;		// total number of blocks in file system
@@ -27,7 +27,7 @@ struct SuperBlock {
 };
 
 
-// Inode Bitmap starts at second disk block
+// Inode starts at first disk block
 struct Inode {
 		uint16_t		Magic;						// Magic number of Inode
 		uint32_t		Size;						// size of file
