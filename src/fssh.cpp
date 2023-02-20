@@ -8,9 +8,9 @@
 
 
 // file system headers
-#include "disk.h"
-#include "FS.h"
-#include "types.h"
+#include "../include/disk.h"
+#include "../include/FS.h"
+#include "../include/types.h"
 
 
 // Macros

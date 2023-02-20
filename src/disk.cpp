@@ -1,6 +1,6 @@
 // Interface between disk and file system
 
-#include "disk.h"
+#include "../include/disk.h"
 
 
 #include <stdio.h>
