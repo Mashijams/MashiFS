@@ -8,14 +8,14 @@ MashiFS: fssh.o disk.o FS.o
 	$(info To create new disk with MashiFS use : Create (Diskname) (TotalBlocks))
 	$(info To mount an existing disk with MashiFS use : Mount (Diskname))
 
-fssh.o: fssh.cpp disk.h FS.h types.h
-	g++ -c fssh.cpp
+fssh.o: src/fssh.cpp include/disk.h include/FS.h include/types.h
+	g++ -c src/fssh.cpp
 
-disk.o: disk.cpp disk.h
-	g++ -c disk.cpp
+disk.o: src/disk.cpp include/disk.h
+	g++ -c src/disk.cpp
 
-FS.o: FS.cpp FS.h
-	g++ -c FS.cpp
+FS.o: src/FS.cpp include/FS.h
+	g++ -c src/FS.cpp
 
 clean:
 	rm *.o MashiFS
